@@ -1,0 +1,168 @@
+{{!-- "settings" PART — the cog-button dropdown. Body-level (fixed, JS
+      positioned), toggled via the hidden attribute rather than re-rendered,
+      so it survives independently of the main window PART's re-renders. --}}
+<div id="dh-settings" class="{{#unless isGM}}player-mode{{/unless}}" hidden>
+  <h3>{{localize "SHRIMPSEH.Settings.Compass.Heading"}}</h3>
+  <div class="setting-sub">
+    <select id="opt-compass-mode" data-action="changeCompassMode">
+      <option value="full" {{#if compass.full}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Compass.ModeFull"}}</option>
+      <option value="simple" {{#if compass.simple}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Compass.ModeSimple"}}</option>
+      <option value="off" {{#if compass.off}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Compass.ModeOff"}}</option>
+    </select>
+  </div>
+  <div class="setting-sub" id="compass-opacity-row" style="{{#if compass.off}}display:none;{{else}}display:flex;{{/if}}">
+    <span class="label">{{localize "SHRIMPSEH.Settings.Compass.OpacityLabel"}}</span>
+    <input type="range" id="opt-compass-opacity" min="20" max="100" value="{{compassOpacityPct}}">
+  </div>
+  {{#if isGM}}
+  <div class="gm-only">
+    <div class="setting-row">
+      <label for="opt-draghint">{{localize "SHRIMPSEH.Settings.Compass.DragHintLabel"}}</label>
+      <input type="checkbox" id="opt-draghint" {{#if showDragHint}}checked{{/if}}>
+    </div>
+  </div>
+  {{/if}}
+  <hr>
+  <h3>{{localize "SHRIMPSEH.Settings.Palette.Heading"}}</h3>
+  <div class="setting-sub">
+    <select id="opt-palette" data-action="changePalette">
+      <option value="obsidian" {{#if (eq palette "obsidian")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Palette.Obsidian"}}</option>
+      <option value="verdant" {{#if (eq palette "verdant")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Palette.Verdant"}}</option>
+      <option value="crimson" {{#if (eq palette "crimson")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Palette.Crimson"}}</option>
+      <option value="arcane" {{#if (eq palette "arcane")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Palette.Arcane"}}</option>
+      <option value="ancient" {{#if (eq palette "ancient")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Palette.Ancient"}}</option>
+      <option value="desert" {{#if (eq palette "desert")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Palette.Desert"}}</option>
+      <option value="hellscape" {{#if (eq palette "hellscape")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Palette.Hellscape"}}</option>
+      <option value="shadow" {{#if (eq palette "shadow")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Palette.Shadow"}}</option>
+      <option value="fey" {{#if (eq palette "fey")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Palette.Fey"}}</option>
+    </select>
+  </div>
+  {{#if isGM}}
+  <div class="gm-only">
+    <hr>
+    <h3>{{localize "SHRIMPSEH.Settings.POIIcons.Heading"}}</h3>
+    <div class="setting-row">
+      <label for="opt-fullcolour">{{localize "SHRIMPSEH.Settings.POIIcons.FullColourLabel"}}</label>
+      <input type="checkbox" id="opt-fullcolour" {{#if fullColourIcons}}checked{{/if}}>
+    </div>
+    <div class="setting-note">{{localize "SHRIMPSEH.Settings.POIIcons.FullColourNote"}}</div>
+  </div>
+  <div class="gm-only">
+    <hr>
+    <h3>{{localize "SHRIMPSEH.Settings.HorizonLength.Heading"}}</h3>
+    <div class="setting-sub">
+      <select id="opt-horizon-length" data-action="changeHorizonLength">
+        <option value="far" {{#if (eq horizonLength "far")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.HorizonLength.Far"}}</option>
+        <option value="medium" {{#if (eq horizonLength "medium")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.HorizonLength.Medium"}}</option>
+        <option value="close" {{#if (eq horizonLength "close")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.HorizonLength.Close"}}</option>
+      </select>
+    </div>
+    <div class="setting-note" id="horizon-length-desc">{{horizonLengthDesc}}</div>
+  </div>
+  <div class="gm-only">
+    <hr>
+    <h3>{{localize "SHRIMPSEH.Settings.Docking.Heading"}}</h3>
+    <div class="setting-row">
+      <label for="opt-free-dock">{{localize "SHRIMPSEH.Settings.Docking.FreeDockLabel"}}</label>
+      <input type="checkbox" id="opt-free-dock" {{#if freeDock}}checked{{/if}}>
+    </div>
+    <div class="setting-note">{{localize "SHRIMPSEH.Settings.Docking.FreeDockNote"}}</div>
+  </div>
+  <div class="gm-only">
+    <hr>
+    <h3>{{localize "SHRIMPSEH.Settings.Presets.Heading"}}</h3>
+    <div class="eh-inline-row">
+      <input type="text" id="preset-name-input" placeholder="{{localize "SHRIMPSEH.Settings.Presets.NamePlaceholder"}}" maxlength="40" value="{{presetNameDraft}}">
+      <button type="button" class="btn" id="preset-save-btn" data-action="savePreset">{{localize "SHRIMPSEH.Settings.Presets.SaveBtn"}}</button>
+    </div>
+    <div class="eh-list" id="preset-list">
+      {{#if presets.length}}
+        {{#each presets}}
+        <div class="eh-chip">
+          <span class="eh-chip-name">{{this}}</span>
+          <div class="eh-chip-actions">
+            <button type="button" data-action="loadPreset" data-preset-name="{{this}}">{{localize "SHRIMPSEH.Settings.Presets.LoadBtn"}}</button>
+            <button type="button" class="danger" data-action="deletePreset" data-preset-name="{{this}}">{{localize "SHRIMPSEH.Settings.Presets.DeleteBtn"}}</button>
+          </div>
+        </div>
+        {{/each}}
+      {{else}}
+        <div class="eh-empty">{{localize "SHRIMPSEH.Settings.Presets.Empty"}}</div>
+      {{/if}}
+    </div>
+    <div class="setting-note">{{localize "SHRIMPSEH.Settings.Presets.Note"}}</div>
+  </div>
+  <div class="gm-only">
+    <hr>
+    <h3>{{localize "SHRIMPSEH.Settings.Journal.Heading"}}</h3>
+    <div class="eh-list" id="journal-list">
+      {{#if journalEntries.length}}
+        {{#each journalEntries}}
+        <div class="eh-chip">
+          <span class="eh-chip-name">{{{../iconJournal}}} {{this.name}}</span>
+          <div class="eh-chip-actions">
+            <button type="button" data-action="openJournalEntry" data-journal-id="{{this.id}}">{{localize "SHRIMPSEH.Settings.Journal.OpenBtn"}}</button>
+          </div>
+        </div>
+        {{/each}}
+      {{else}}
+        <div class="eh-empty">{{localize "SHRIMPSEH.Settings.Journal.Empty"}}</div>
+      {{/if}}
+    </div>
+    <div class="setting-note">{{localize "SHRIMPSEH.Settings.Journal.Note"}}</div>
+  </div>
+  <div class="gm-only">
+    <hr>
+    <h3>{{localize "SHRIMPSEH.Settings.Generator.Heading"}}</h3>
+    <div class="setting-sub">
+      <span class="label">{{localize "SHRIMPSEH.Settings.Generator.BiomeLabel"}}</span>
+      <select id="gen-biome-select">
+        <option value="mountains" {{#if (eq genBiome "mountains")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.MountainsFamily"}}</option>
+        <option value="hills" {{#if (eq genBiome "hills")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.HillsFamily"}}</option>
+        <option value="desert" {{#if (eq genBiome "desert")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.DesertFamily"}}</option>
+        <option value="forest" {{#if (eq genBiome "forest")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.ForestGroup"}}</option>
+        <option value="random" {{#if (eq genBiome "random")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Generator.BiomeRandom"}}</option>
+        <option value="combo" {{#if (eq genBiome "combo")}}selected{{/if}}>{{localize "SHRIMPSEH.Settings.Generator.BiomeCombo"}}</option>
+      </select>
+    </div>
+    <div class="setting-sub" id="gen-combo-row" {{#unless genComboVisible}}hidden{{/unless}}>
+      <span class="label">{{localize "SHRIMPSEH.Settings.Generator.MixLabel"}}</span>
+      <select id="gen-combo-a">
+        <option value="mountains" {{#if (eq genComboA "mountains")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.MountainsFamily"}}</option>
+        <option value="hills" {{#if (eq genComboA "hills")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.HillsFamily"}}</option>
+        <option value="desert" {{#if (eq genComboA "desert")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.DesertFamily"}}</option>
+        <option value="forest" {{#if (eq genComboA "forest")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.ForestGroup"}}</option>
+      </select>
+      <select id="gen-combo-b">
+        <option value="mountains" {{#if (eq genComboB "mountains")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.MountainsFamily"}}</option>
+        <option value="hills" {{#if (eq genComboB "hills")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.HillsFamily"}}</option>
+        <option value="desert" {{#if (eq genComboB "desert")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.DesertFamily"}}</option>
+        <option value="forest" {{#if (eq genComboB "forest")}}selected{{/if}}>{{localize "SHRIMPSEH.Biome.ForestGroup"}}</option>
+      </select>
+    </div>
+    <div class="setting-sub">
+      <span class="label">{{localize "SHRIMPSEH.Settings.Generator.RuggednessLabel"}}</span>
+      <select id="gen-ruggedness-select">
+        <option value="calm" {{#if (eq genRuggedness "calm")}}selected{{/if}}>{{localize "SHRIMPSEH.Generator.Ruggedness.Calm"}}</option>
+        <option value="rugged" {{#if (eq genRuggedness "rugged")}}selected{{/if}}>{{localize "SHRIMPSEH.Generator.Ruggedness.Rugged"}}</option>
+        <option value="jagged" {{#if (eq genRuggedness "jagged")}}selected{{/if}}>{{localize "SHRIMPSEH.Generator.Ruggedness.Jagged"}}</option>
+      </select>
+    </div>
+    <div class="setting-sub" id="gen-density-row">
+      <span class="label">{{localize "SHRIMPSEH.Settings.Generator.DensityLabel"}} <span id="gen-density-val">{{genDensity}}</span></span>
+      <input type="range" id="gen-density-slider" min="2" max="8" value="{{genDensity}}">
+    </div>
+    <div class="eh-inline-row">
+      <input type="text" id="gen-seed-input" placeholder="{{localize "SHRIMPSEH.Settings.Generator.SeedPlaceholder"}}" maxlength="24" value="{{genSeed}}">
+      <button type="button" class="btn" id="gen-randomize-btn" data-action="randomizeGenSeed" title="{{localize "SHRIMPSEH.Settings.Generator.RandomizeBtnTitle"}}">&#x1F3B2;</button>
+    </div>
+    <button type="button" class="btn" id="gen-generate-btn" data-action="generateHorizon" style="align-self:flex-start;">{{localize "SHRIMPSEH.Settings.Generator.GenerateBtn"}}</button>
+    <div class="setting-note">{{localize "SHRIMPSEH.Settings.Generator.Note"}}</div>
+  </div>
+  <div class="gm-only">
+    <hr>
+    <h3>{{localize "SHRIMPSEH.Settings.Window.Heading"}}</h3>
+    <button type="button" class="btn" id="dh-reset-btn" data-action="resetWindowPosition">{{localize "SHRIMPSEH.Settings.Window.ResetBtn"}}</button>
+  </div>
+  {{/if}}
+</div>

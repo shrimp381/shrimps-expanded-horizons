@@ -1,0 +1,141 @@
+{{!-- Main "window" PART. Rendered inside the app's root element (#eh-window,
+      because window.frame:false — see expanded-horizons.js for why). Structure/ids
+      are kept 1:1 with the pre-ApplicationV2 markup so styles/expanded-horizons.css
+      needs no rework, and so the GM-only-visibility / CSS-scoping fixes already
+      shipped keep applying unchanged.
+
+      Foundry requires every PART's rendered template to be a SINGLE root HTML
+      element (ApplicationV2 uses that one element as the part's own mount node);
+      the pre-ApplicationV2 markup below was several top-level sibling divs, which
+      throws "Template part must render a single HTML element" the instant the app
+      tries to render. Everything is wrapped in one outer #eh-window-part div here
+      to satisfy that; styles/expanded-horizons.css has a matching
+      `#eh-window-part{ display:contents }` rule so this wrapper stays invisible
+      to layout and #dh-titlebar/#horizon-wrap/#controls/#dh-resize-handle keep
+      acting as direct flex children of #eh-window. Scoped to this one id rather
+      than a blanket "any div child of #eh-window" rule, since #dh-settings and
+      #layers-info-popup are also bare div PARTS under #eh-window and must NOT
+      be collapsed. --}}
+
+<div id="eh-window-part">
+<div id="dh-free-dock-handle" title="Drag to reposition — this browser only">
+  <span></span><span></span><span></span>
+</div>
+
+<div id="dh-titlebar">
+  <div id="dh-draghandle">
+    <span id="dh-logo" aria-hidden="true"></span>
+    <div style="display:flex; flex-direction:column; line-height:1.15; min-width:0;">
+      <span id="dh-title">{{localize "SHRIMPSEH.WindowTitle"}}</span>
+      <span id="dh-subtitle" class="mono">{{subtitleText}}</span>
+    </div>
+  </div>
+
+  {{#if isGM}}
+  <div class="segmented" id="view-toggle">
+    <button type="button" data-action="setViewMode" data-mode="gm" class="{{#if isGmView}}active{{/if}}">{{localize "SHRIMPSEH.Toggle.GM"}}</button>
+    <button type="button" data-action="setViewMode" data-mode="player" class="{{#unless isGmView}}active{{/unless}}">{{localize "SHRIMPSEH.Toggle.Player"}}</button>
+  </div>
+  {{/if}}
+
+  <div class="segmented icon-segmented" id="daytime-toggle">
+    <button type="button" data-action="setDaytime" data-time="day" class="{{#if isDay}}active{{/if}}" title="{{localize "SHRIMPSEH.Toggle.Day"}}">{{{iconSun}}}</button>
+    <button type="button" data-action="setDaytime" data-time="night" class="{{#unless isDay}}active{{/unless}}" title="{{localize "SHRIMPSEH.Toggle.Night"}}">{{{iconMoon}}}</button>
+  </div>
+
+  {{#if isGM}}
+  <button type="button" class="cog-btn{{#if viewLocked}} active{{/if}}" id="lock-view-btn" data-action="toggleLockView" title="{{lockViewTitle}}" aria-label="{{localize "SHRIMPSEH.LockView.Aria"}}">{{{lockViewIcon}}}</button>
+  {{/if}}
+
+  <button type="button" class="cog-btn" id="cog-btn" data-action="toggleSettings" title="{{localize "SHRIMPSEH.Settings.BtnTitle"}}" aria-label="{{localize "SHRIMPSEH.Settings.BtnAria"}}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    </svg>
+  </button>
+</div>
+
+<div id="horizon-wrap" class="{{#unless isDay}}night{{/unless}}{{#if vantageActive}} vantage-active{{/if}}">
+  {{!-- Vantage Point is a purely local display toggle (never saved/synced —
+        see ExpandedHorizonsApp#_setVantageActive), available to GM and
+        player alike, same as the compass and day/night controls. Sits at
+        #horizon-wrap level (not inside #horizon-view) so it stays visible
+        and clickable regardless of which of #horizon-view/#radar-view is
+        currently shown. --}}
+  <button type="button" class="vantage-toggle-btn{{#if vantageActive}} active{{/if}}" id="vantage-toggle-btn" data-action="toggleVantage" title="{{localize "SHRIMPSEH.VantagePoint.BtnTitle"}}" aria-label="{{localize "SHRIMPSEH.VantagePoint.Aria"}}">{{localize "SHRIMPSEH.VantagePoint.BtnLabel"}}</button>
+
+  <div id="horizon-view">
+    <div id="layers-container" class="{{#unless isDay}}night{{/unless}}" style="position:absolute; inset:0;"></div>
+    <div id="vignette"></div>
+    <div id="layer-hud" class="hud"><b id="layer-count-text">{{layerCountText}}</b>/6 layers</div>
+    <span id="drag-hint" {{#unless showDragHint}}hidden{{/unless}}>&larr; drag to scan &middot; drag a POI to place it &rarr;</span>
+  </div>
+
+  {{!-- Top-down radar (see ExpandedHorizonsApp#_renderRadar) — swapped in for
+        #horizon-view while Vantage Point is active, via CSS on .vantage-active
+        (both stay in the DOM; only one is shown at a time). Built imperatively
+        into #radar-svg, same pattern as #layers-container's terrain/POI markup. --}}
+  <div id="radar-view">
+    <svg id="radar-svg" viewBox="0 0 320 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="{{localize "SHRIMPSEH.Radar.Aria"}}"></svg>
+  </div>
+
+  <div id="compass-hud" class="hud" style="--compass-opacity: {{compassOpacity}};" {{#if compassOff}}hidden{{/if}}>
+    <span id="compass-text">{{compassText}}</span>
+  </div>
+</div>
+
+{{#if showGmControls}}
+<div id="controls">
+  <div id="panel-layers" class="panel">
+    <h2>
+      <span style="display:inline-flex; align-items:center; gap:5px;">
+        {{localize "SHRIMPSEH.Layers.Heading"}}
+        <button type="button" class="info-btn" id="layers-info-btn" data-action="toggleLayersInfo" title="{{localize "SHRIMPSEH.Layers.InfoBtnTitle"}}" aria-label="{{localize "SHRIMPSEH.Layers.InfoBtnAria"}}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="11" x2="12" y2="16.5"></line><circle cx="12" cy="7.5" r="0.6" fill="currentColor" stroke="none"></circle></svg>
+        </button>
+      </span>
+      <span class="label" style="font-weight:400;">{{localize "SHRIMPSEH.Layers.SubLabel"}}</span>
+    </h2>
+    <div class="quick-apply">
+      <select id="quick-biome-select">{{{quickBiomeOptionsHtml}}}</select>
+      <button type="button" class="btn" id="quick-biome-apply" data-action="applyQuickBiome">{{localize "SHRIMPSEH.Layers.QuickApplyBtn"}}</button>
+    </div>
+    <div id="layer-rows">
+      {{#each layers}}{{> eh-layer-row this}}{{/each}}
+    </div>
+  </div>
+
+  <div id="panel-pois" class="panel">
+    <h2>
+      {{localize "SHRIMPSEH.POI.Heading"}}
+      <button type="button" class="btn" id="add-poi-btn" data-action="addPoi">{{localize "SHRIMPSEH.POI.AddBtn"}}</button>
+    </h2>
+    <div id="poi-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:17%;">{{localize "SHRIMPSEH.POI.TableHeader.Name"}}</th>
+            <th style="width:16%;">{{localize "SHRIMPSEH.POI.TableHeader.Icon"}}</th>
+            <th style="width:7%;">{{localize "SHRIMPSEH.POI.TableHeader.Layer"}}</th>
+            <th style="width:5%;">{{localize "SHRIMPSEH.POI.TableHeader.Size"}}</th>
+            <th style="width:11%;">{{localize "SHRIMPSEH.POI.TableHeader.State"}}</th>
+            <th style="width:19%;">{{localize "SHRIMPSEH.POI.TableHeader.Radar"}}</th>
+            <th style="width:14%;">{{localize "SHRIMPSEH.POI.TableHeader.Journal"}}</th>
+            <th style="width:11%; text-align:right;">{{localize "SHRIMPSEH.POI.TableHeader.Actions"}}</th>
+          </tr>
+        </thead>
+        <tbody id="poi-list">
+          {{#if pois.length}}
+            {{#each pois}}{{> eh-poi-row this}}{{/each}}
+          {{else}}
+            <tr><td colspan="8" style="padding:18px 7px; text-align:center; color:var(--parchment-dim); font-size:11.5px;">{{localize "SHRIMPSEH.POI.EmptyState"}}</td></tr>
+          {{/if}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{{/if}}
+
+<div id="dh-resize-handle" title="Drag to resize — this is the minimum size"></div>
+</div>

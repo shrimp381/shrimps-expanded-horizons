@@ -1,0 +1,224 @@
+{
+  "SHRIMPSEH": {
+    "WindowTitle": "Expanded Horizons",
+    "SceneControlTitle": "Toggle Shrimp's Expanded Horizons",
+
+    "Subtitle": {
+      "GM": "GM view",
+      "Player": "Player view",
+      "Locked": " · view locked",
+      "DockHint": " · double-click to dock",
+      "Full": "{mode}{lock}{dock}"
+    },
+
+    "Toggle": {
+      "GM": "GM",
+      "Player": "Player",
+      "Day": "Day",
+      "Night": "Night"
+    },
+
+    "LockView": {
+      "Lock": "Lock view (stop players scrolling)",
+      "Unlock": "View locked — players can't scroll. Click to unlock.",
+      "Aria": "Lock view"
+    },
+
+    "Settings": {
+      "BtnTitle": "Settings",
+      "BtnAria": "Settings",
+      "Compass": {
+        "Heading": "Compass",
+        "ModeFull": "Full — cardinal + degrees",
+        "ModeSimple": "Simple — cardinal only",
+        "ModeOff": "Hidden",
+        "OpacityLabel": "Compass opacity",
+        "DragHintLabel": "Show drag hint"
+      },
+      "Palette": {
+        "Heading": "Palette",
+        "Obsidian": "Obsidian & Brass",
+        "Verdant": "Verdant Camp",
+        "Crimson": "Crimson Watch",
+        "Arcane": "Arcane Violet",
+        "Ancient": "Ancient Parchment",
+        "Desert": "Desert Sands",
+        "Hellscape": "Hellscape",
+        "Shadow": "Shadow",
+        "Fey": "Feywild"
+      },
+      "POIIcons": {
+        "Heading": "POI Icons",
+        "FullColourLabel": "Full-colour icons",
+        "FullColourNote": "Off (default): icons tint to their layer's colour. On: icons render in their own colours or, for uploads, the original image."
+      },
+      "HorizonLength": {
+        "Heading": "Horizon Length",
+        "Far": "Far",
+        "Medium": "Medium",
+        "Close": "Close",
+        "DescFar": "Full-length horizon — more dragging to scan the whole view.",
+        "DescMedium": "Balanced — a middle ground between range and reach.",
+        "DescClose": "Short horizon — reach any point with minimal dragging."
+      },
+      "Docking": {
+        "Heading": "Docking",
+        "FreeDockLabel": "Free Dock",
+        "FreeDockNote": "When docked, drag the small handle above the strip to move it anywhere on your own screen instead of the auto-centred position. This is per-browser — it isn't shared with other players."
+      },
+      "Presets": {
+        "Heading": "Presets",
+        "NamePlaceholder": "Preset name…",
+        "SaveBtn": "Save",
+        "LoadBtn": "Load",
+        "DeleteBtn": "Delete",
+        "Empty": "No saved presets yet.",
+        "Note": "Saves the current layers, POIs, palette and horizon length as a named preset you can reload later, or swap onto a different scene. Shared with every GM in this world."
+      },
+      "Journal": {
+        "Heading": "Journal Entries",
+        "OpenBtn": "Open",
+        "Empty": "No journal entries in this world yet.",
+        "Note": "This mirrors Foundry's own Journal sidebar. Link an entry to a POI from its row in the table below; once that POI is Discovered, players see a small journal badge on it that opens the real entry."
+      },
+      "Generator": {
+        "Heading": "Procedural Generator",
+        "BiomeLabel": "Biome",
+        "BiomeRandom": "Random",
+        "BiomeCombo": "Combo (mix two)",
+        "MixLabel": "Mix",
+        "RuggednessLabel": "Ruggedness",
+        "DensityLabel": "POI density:",
+        "SeedPlaceholder": "Seed (optional)",
+        "RandomizeBtnTitle": "Random seed",
+        "GenerateBtn": "Generate horizon",
+        "Note": "Replaces the current layers and POIs with a procedurally built horizon from these parameters — same seed always builds the same result."
+      },
+      "Window": {
+        "Heading": "Window",
+        "ResetBtn": "Reset position"
+      }
+    },
+
+    "VantagePoint": {
+      "BtnLabel": "Vantage Point",
+      "BtnTitle": "Vantage Point — top-down radar view",
+      "Aria": "Vantage Point"
+    },
+
+    "Radar": {
+      "Aria": "Top-down radar — rings are terrain layers, dots are points of interest",
+      "UnknownTooltip": "Something's here…"
+    },
+
+    "Layers": {
+      "Heading": "Layers",
+      "SubLabel": "toggle · X/Y · image",
+      "InfoBtnTitle": "Custom image guidance",
+      "InfoBtnAria": "Custom image guidance",
+      "QuickApplyBtn": "Apply all",
+      "ToggleTitle": "Toggle layer {id}",
+      "UploadBtnTitle": "Choose an image for this layer — opens Foundry's own file browser to upload a new one or pick an existing file under {path}",
+      "ImageSettingsBtnTitle": "Tiling & tint options",
+      "ClearImageBtnTitle": "Revert to procedural biome",
+      "MirrorTileLabel": "Seamless mirror tiling",
+      "MirrorTileHint": "— guarantees a seam-free loop for any image",
+      "TintLabel": "Tint to layer colour",
+      "TintHint": "— off keeps the image's own colours (for full-colour art)",
+      "ApplyBtn": "Apply",
+      "AxisY": "Y",
+      "AxisX": "X"
+    },
+
+    "LayersInfo": {
+      "Heading": "Custom Layer Images",
+      "Body1": "Recommended: a wide, short PNG (transparent background) drawn as a horizon silhouette — around <code>2400×400px</code> to <code>3600×600px</code>, roughly 6:1 wide. It's stretched to fill the layer's height and tiled sideways, so keep the important shapes clear of the very top/bottom edges.",
+      "Body2": "<strong>Seamless tiling</strong> — when the image's left and right edges don't already line up, turn on <em>Seamless mirror tiling</em> next to the upload (on by default). It mirrors the image and tiles <code>[image][flipped copy]</code> alternately — that guarantees a perfect, jump-free loop for any image, at the cost of every other tile appearing mirrored.",
+      "Body3": "Prefer a true unbroken loop with no mirroring? Author the source image so its leftmost and rightmost columns already match, then turn tiling off.",
+      "Body4": "<strong>Solid base</strong> — layers can be dragged vertically, which opens a gap beneath artwork that doesn't already reach the bottom edge. For best results, draw your image with a flat, solid-colour base near the bottom (like the bundled Forest presets). If you don't, the module will only fill the exact gap your drag creates, straight down from wherever your art already stops — it won't guess a shape for you, so any hole left by incomplete artwork is yours to fix in the source image."
+    },
+
+    "POI": {
+      "Heading": "Points of Interest",
+      "AddBtn": "+ Add POI",
+      "NewName": "New Location",
+      "EmptyState": "No points of interest yet — click \"+ Add POI\" to place one.",
+      "TableHeader": {
+        "Name": "Name",
+        "Icon": "Icon",
+        "Layer": "Layer",
+        "Size": "Size",
+        "State": "State",
+        "Radar": "Radar",
+        "Journal": "Journal",
+        "Actions": "—"
+      },
+      "State": {
+        "Hidden": "Hidden",
+        "Unknown": "Unknown",
+        "Rumored": "Rumored",
+        "Discovered": "Discovered"
+      },
+      "Size": {
+        "Small": "S",
+        "Medium": "M",
+        "Large": "L",
+        "TitleFull": "Icon size"
+      },
+      "Icon": {
+        "Tower": "Tower",
+        "Mine": "Mineshaft",
+        "Cave": "Cave",
+        "Camp": "Camp",
+        "Ruins": "Ruins",
+        "Bridge": "Bridge",
+        "Danger": "Danger",
+        "Village": "Village",
+        "Tree": "Grove",
+        "Water": "Water"
+      },
+      "UploadBtnTitle": "Choose an image for this POI — opens Foundry's own file browser to upload a new one or pick an existing file under {path}",
+      "ClearIconBtnTitle": "Revert to a generic icon",
+      "FocusBtnTitle": "Centre horizon on this POI",
+      "LockBtnTitle": "Lock position",
+      "UnlockBtnTitle": "Unlock position",
+      "DeleteBtnTitle": "Delete POI",
+      "JournalNone": "— None —",
+      "JournalBadgeTitle": "Read: {name}",
+      "JournalBadgeAria": "Read journal entry",
+      "BearingTitle": "Compass bearing (0-359°) for the radar view — independent of this POI's position on the flat horizon",
+      "BearingAlignTitle": "Set bearing to the horizon's current facing",
+      "RevealDCTitle": "Passive Perception DC — a Hidden POI becomes visible (as an unidentified blip) to a player whose own passive Perception meets or beats this"
+    },
+
+    "Biome": {
+      "MountainsFamily": "Mountains",
+      "HillsFamily": "Hills",
+      "DesertFamily": "Desert",
+      "MountainSingular": "Mountain",
+      "HillSingular": "Hill",
+      "DesertSingular": "Desert",
+      "NumberedLabel": "{label} {n}",
+      "ForestGroup": "Forest",
+      "Forest1": "Forest 1",
+      "Forest2": "Forest 2"
+    },
+
+    "Notify": {
+      "SaveError": "Expanded Horizons: couldn't save to this scene — check your permissions.",
+      "PaletteError": "Expanded Horizons: couldn't push the palette — check your permissions.",
+      "UploadError": "Expanded Horizons: couldn't upload that image — check your file-storage permissions."
+    },
+
+    "Generator": {
+      "Ruggedness": {
+        "Calm": "Calm",
+        "Rugged": "Rugged",
+        "Jagged": "Jagged"
+      },
+      "Notify": "Expanded Horizons: generated a {ruggedness} {descriptor} horizon (seed \"{seed}\") with {poiPhrase}.",
+      "PoiCountSingular": "1 point of interest",
+      "PoiCountPlural": "{count} points of interest"
+    }
+  }
+}
