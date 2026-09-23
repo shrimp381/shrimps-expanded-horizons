@@ -520,7 +520,16 @@
     padding:6px 2px; border-bottom:1px solid var(--ink-800);
   }
   .layer-row:last-child{ border-bottom:none; }
-  .layer-row.disabled{ opacity:.38; }
+  /* Deliberately NOT ".disabled" — that generic class name collides with a
+     global ".disabled{pointer-events:none}" utility rule from Foundry core
+     or another installed module's CSS (all module stylesheets share the
+     same "modules" cascade layer, so ANY same-named class anywhere in that
+     layer can match here). That collision silently made every control
+     inside a disabled layer row — including its own re-enable checkbox —
+     inert to clicks, which is exactly why a deactivated layer could never
+     be turned back on. This class is scoped to this module and only ever
+     sets opacity, never pointer-events. */
+  .layer-row.eh-layer-off{ opacity:.38; }
   .layer-row-top{ display:flex; align-items:center; gap:5px; }
   .layer-row-top input[type=checkbox]{ accent-color:var(--brass-bright); width:13px; height:13px; flex:0 0 auto; }
   .layer-row-top .idx{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--parchment-dim); flex:0 0 11px; }
