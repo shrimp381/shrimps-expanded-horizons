@@ -453,9 +453,10 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
       addPoi: ExpandedHorizonsApp.#onAddPoi,
       applyQuickBiome: ExpandedHorizonsApp.#onApplyQuickBiome,
       resetWindowPosition: ExpandedHorizonsApp.#onResetWindowPosition,
-      toggleLayerEnabled: ExpandedHorizonsApp.#onToggleLayerEnabled,
-      toggleLayerMirrorTile: ExpandedHorizonsApp.#onToggleLayerMirrorTile,
-      toggleLayerTint: ExpandedHorizonsApp.#onToggleLayerTint,
+      // toggleLayerEnabled / toggleLayerMirrorTile / toggleLayerTint are
+      // deliberately NOT wired here — see _onLayerRowsChange()'s comment for
+      // why these three checkboxes are handled via the delegated 'change'
+      // listener instead of the data-action framework.
       triggerLayerUpload: ExpandedHorizonsApp.#onTriggerLayerUpload,
       openLayerImageSettings: ExpandedHorizonsApp.#onOpenLayerImageSettings,
       clearLayerImage: ExpandedHorizonsApp.#onClearLayerImage,
@@ -733,6 +734,29 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!this.uiState.compactMode) this.setPosition(this._computeDefaultPosition());
   }
 
+  // ApplicationV2#render() resets this.position.width/height back to "auto"
+  // on EVERY call, not just the first one — regardless of what triggered the
+  // render or whether the GM had manually resized/dragged the window. Since
+  // virtually every action in this app (POI icon/bearing/lock/delete, layer
+  // toggles, settings options, Lock View, day/night, GM/Player switch,
+  // "Apply all", etc.) calls this.render() to refresh what's on screen, that
+  // reset was snapping the floating window back to its default/minimum size
+  // on almost any interaction. Centralizing the fix here — rather than
+  // patching each individual this.render() call site — means every current
+  // and future caller is covered automatically. Docked/compact mode is
+  // untouched (its sizing is always CSS/content-driven, never numeric), and
+  // the very first render is untouched too (this.position isn't numeric on
+  // both axes yet, so there's nothing to preserve).
+  async render(options, _options){
+    const preserveSize = !this.uiState?.compactMode &&
+      typeof this.position?.width === 'number' &&
+      typeof this.position?.height === 'number';
+    const size = preserveSize ? { width: this.position.width, height: this.position.height } : null;
+    const result = await super.render(options, _options);
+    if (size) this.setPosition(size);
+    return result;
+  }
+
   _computeDefaultPosition(){
     return {
       left: Math.round(window.innerWidth * 0.03),
@@ -984,6 +1008,30 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!layer) return;
     if (t.classList.contains('layer-biome')) {
       this._applyBiomeOrImage(layer, t.value, () => this.render());
+    } else if (t.classList.contains('layer-enable')) {
+      // Deliberately a manually-wired 'change' listener (delegated from
+      // #layer-rows), NOT the data-action framework — Foundry's ApplicationV2
+      // action-click delegation doesn't reliably fire for <input> checkboxes
+      // (confirmed live: a real click toggled the box visually but never
+      // invoked the mapped action, in either direction, so layer.enabled
+      // never actually changed and the next unrelated render() re-rendered
+      // the row back from the stale, unchanged value — reading as "can't be
+      // reactivated"). Every other checkbox in this app already uses this
+      // same manual change-listener pattern (see the settings panel below);
+      // this brings these three layer-row checkboxes in line with it.
+      layer.enabled = t.checked;
+      this.render();
+    } else if (t.classList.contains('layer-mirror-tile')) {
+      layer.mirrorTile = t.checked;
+      processCustomImage(layer, (finalUrl, dims) => {
+        layer.customImage = finalUrl;
+        layer.customImageDims = dims;
+        layer._processedFromRaw = layer.customImageRaw;
+        this.render();
+      });
+    } else if (t.classList.contains('layer-tint')) {
+      layer.tintToColor = t.checked;
+      this.render();
     }
   }
   _onLayerRowsInput(e){
@@ -1129,29 +1177,6 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.layerConfig.forEach(l => this._applyBiomeOrImage(l, b, done));
   }
   static #onResetWindowPosition(){ this._resetWindowPosition(); }
-  static #onToggleLayerEnabled(event, target){
-    const layer = this.layerConfig.find(l => l.id === parseInt(target.dataset.layerId, 10));
-    if (!layer) return;
-    layer.enabled = target.checked;
-    this.render();
-  }
-  static #onToggleLayerMirrorTile(event, target){
-    const layer = this.layerConfig.find(l => l.id === parseInt(target.dataset.layerId, 10));
-    if (!layer) return;
-    layer.mirrorTile = target.checked;
-    processCustomImage(layer, (finalUrl, dims) => {
-      layer.customImage = finalUrl;
-      layer.customImageDims = dims;
-      layer._processedFromRaw = layer.customImageRaw;
-      this.render();
-    });
-  }
-  static #onToggleLayerTint(event, target){
-    const layer = this.layerConfig.find(l => l.id === parseInt(target.dataset.layerId, 10));
-    if (!layer) return;
-    layer.tintToColor = target.checked;
-    this.render();
-  }
   // Opens Foundry's OWN FilePicker application — the same file-browser
   // dialog Foundry uses for a Tile's or an Actor's image field — rather
   // than a plain OS "choose a file from my device" input. That dialog

@@ -1,0 +1,45 @@
+{{!-- Single row inside #layer-rows. Rendered by the "layers" PART via
+      {{#each layers}}{{> eh-layer-row}}{{/each}} in window.hbs.
+      Context: one entry from ExpandedHorizonsApp#_layerRowContext(). --}}
+<div class="layer-row{{#unless enabled}} disabled{{/unless}}" data-layer-id="{{id}}">
+  <div class="layer-row-top">
+    <input type="checkbox" class="layer-enable" data-layer-id="{{id}}" {{#if enabled}}checked{{/if}} title="{{toggleTitle}}">
+    <span class="idx">{{id}}</span>
+    <span class="swatch" style="background:{{color}};"></span>
+    <div class="layer-source">
+      {{#if isUpload}}
+        <span class="img-chip" title="{{imageChipTitle}}">&#x1F5BC; {{imageChipName}}</span>
+        {{#unless showImageSettings}}
+          <button type="button" class="icon-btn small image-settings-btn" data-action="openLayerImageSettings" data-layer-id="{{id}}" title="{{imageSettingsBtnTitle}}">{{{iconSliders}}}</button>
+        {{/unless}}
+        <button type="button" class="icon-btn small clear-image-btn" data-action="clearLayerImage" data-layer-id="{{id}}" title="{{clearImageBtnTitle}}">{{{iconClear}}}</button>
+      {{else}}
+        <select class="layer-biome" data-action="changeLayerBiome" data-layer-id="{{id}}">{{{biomeOptionsHtml}}}</select>
+      {{/if}}
+    </div>
+    <button type="button" class="icon-btn small upload-image-btn" data-action="triggerLayerUpload" data-layer-id="{{id}}" title="{{uploadTitle}}">{{{iconUpload}}}</button>
+  </div>
+
+  {{#if showImageSettings}}
+  <label class="mirror-tile-row">
+    <input type="checkbox" class="layer-mirror-tile" data-layer-id="{{id}}" {{#if mirrorTile}}checked{{/if}}>
+    {{mirrorTileLabel}} <span class="hint">{{mirrorTileHint}}</span>
+  </label>
+  <label class="mirror-tile-row">
+    <input type="checkbox" class="layer-tint" data-layer-id="{{id}}" {{#if tintToColor}}checked{{/if}}>
+    {{tintLabel}} <span class="hint">{{tintHint}}</span>
+  </label>
+  <button type="button" class="btn small apply-image-settings-btn" data-action="applyLayerImageSettings" data-layer-id="{{id}}" style="align-self:flex-start; margin-left:16px;">{{{iconCheck}}} {{applyBtnLabel}}</button>
+  {{/if}}
+
+  <div class="offset-row">
+    <span class="axis-label">{{axisYLabel}}</span>
+    <input type="range" class="layer-offset-y" data-layer-id="{{id}}" min="-140" max="140" value="{{yOffset}}">
+    <span class="val" data-offset-val="y">{{yOffset}}px</span>
+  </div>
+  <div class="offset-row">
+    <span class="axis-label">{{axisXLabel}}</span>
+    <input type="range" class="layer-offset-x" data-layer-id="{{id}}" min="-200" max="200" value="{{xOffset}}">
+    <span class="val" data-offset-val="x">{{xOffset}}px</span>
+  </div>
+</div>

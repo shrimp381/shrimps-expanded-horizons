@@ -2,7 +2,7 @@
   "id": "shrimps-expanded-horizons",
   "title": "Shrimp's Expanded Horizons",
   "description": "A parallax horizon and points-of-interest overlay for your scenes, with journal-linked POIs, save/load presets, a procedural horizon generator, a top-down radar Vantage Point view, and passive-Perception-gated POI visibility. Built on top of Shrimp's Distant Horizons — see the README for full status and roadmap.",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "compatibility": {
     "minimum": "13",
     "verified": "13"
