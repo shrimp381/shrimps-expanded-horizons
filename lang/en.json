@@ -107,8 +107,7 @@
 
     "Radar": {
       "Aria": "Top-down radar — rings are terrain layers, dots are points of interest",
-      "UnknownTooltip": "Something's here…",
-      "LayerFallbackLabel": "Layer {id}"
+      "UnknownTooltip": "Something's here…"
     },
 
     "Layers": {

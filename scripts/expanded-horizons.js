@@ -342,6 +342,9 @@ function processCustomImage(layer, cb){
 }
 
 const HORIZON_LENGTH_MUL = { far: 1.5, medium: 2.4, close: 3.6 };
+// Fixed floating-window size Vantage Point locks to for every viewer,
+// every time it's toggled on — see ExpandedHorizonsApp#_setVantageActive.
+const VANTAGE_LOCKED_SIZE = { width: 820, height: 604 };
 const HORIZON_LENGTH_DESC_KEYS = {
   far: 'SHRIMPSEH.Settings.HorizonLength.DescFar',
   medium: 'SHRIMPSEH.Settings.HorizonLength.DescMedium',
@@ -540,10 +543,12 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Vantage Point (top-down radar view) — purely a local display toggle,
     // never saved to the scene or pushed to players, so it lives here
-    // rather than in uiState. It never resizes the window (see
-    // _setVantageActive) — it just swaps #horizon-view for #radar-view
-    // within whatever size the window already is.
+    // rather than in uiState. _vantagePrevSize remembers the floating
+    // window's size from just before Vantage Point locked it to
+    // VANTAGE_LOCKED_SIZE, so turning it back off restores exactly what
+    // was there (see _setVantageActive).
     this._vantageActive = false;
+    this._vantagePrevSize = null;
 
     // Procedural Generator + Presets form drafts — text/selection the GM
     // is actively composing in the settings panel. Kept on the instance
@@ -1505,28 +1510,6 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
   _orderedEnabledLayerIds(){
     return this.layerConfig.filter(l => l.enabled).map(l => l.id);
   }
-  // Human-readable terrain name for a layer — used to label each radar
-  // ring (see _renderRadar()). Reuses the same biome-family/variant and
-  // builtin-forest-image labels the Layers panel's own biome <select>
-  // already shows, so a ring's label always matches what the GM picked
-  // there; falls back to a generic "Layer N" for an uploaded custom image
-  // (no biome name applies) or anything unrecognized.
-  _layerDisplayName(layer){
-    if (!layer) return '';
-    const fallback = () => game.i18n.format('SHRIMPSEH.Radar.LayerFallbackLabel', { id: layer.id });
-    if (layer.customImage && !layer.customImageBuiltin) return fallback();
-    const biome = layer.biome || '';
-    if (biome.startsWith('img:')) {
-      const key = biome.slice(4);
-      const found = BUILTIN_LAYER_IMAGES.forest.find(b => b.key === key);
-      return found ? game.i18n.localize(found.labelKey) : fallback();
-    }
-    const [family, variantStr] = biome.split('-');
-    const fam = BIOME_FAMILIES.find(f => f.key === family);
-    if (!fam) return fallback();
-    const variant = parseInt(variantStr, 10) || 1;
-    return game.i18n.format('SHRIMPSEH.Biome.NumberedLabel', { label: game.i18n.localize(fam.singularKey), n: variant });
-  }
   _fillerHeightFor(layer){
     return Math.max(0, -layer.yOffset);
   }
@@ -1777,22 +1760,13 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     };
 
     // Rings, one per enabled layer, nearest innermost. Coloured with the
-    // layer's own palette colour so ring identity reads at a glance, and
-    // labelled with that layer's terrain name (all placed along the same
-    // fixed bearing so they stack cleanly radius-over-radius rather than
-    // colliding with the compass spokes/labels).
-    const RING_LABEL_BEARING = 100;
+    // layer's own palette colour so ring identity reads at a glance.
     ordered.forEach((layerId, i) => {
       const layer = this.layerConfig.find(l => l.id === layerId);
       const r = ringStep * (i + 1);
       const ring = el('circle', { cx, cy, r, class: 'radar-ring' });
       ring.style.stroke = layer?.color || 'var(--brass)';
       svg.appendChild(ring);
-
-      const labelPos = toXY(RING_LABEL_BEARING, r);
-      const label = el('text', { x: labelPos.x + 3, y: labelPos.y, class: 'radar-ring-label' });
-      label.textContent = this._layerDisplayName(layer);
-      svg.appendChild(label);
     });
 
     // 8-point compass spokes, fixed (never rotate) — the radar is north-up.
@@ -1969,12 +1943,27 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // fill whatever room that frees up — Vantage Point's extra size is
     // for the horizon itself, not the panel underneath it.
     el.classList.toggle('vantage-active', active);
-    // Deliberately no setPosition()/window-resizing here at all — Vantage
-    // Point opens and stays locked to whatever size the window (default or
-    // GM-resized) already is. #controls (Layers/POI panel) hides via the
-    // .vantage-active CSS class above, and #horizon-wrap's existing
-    // `flex:1 1 auto` simply lets the radar fill the room that frees up
-    // within the window's current bounds — same footprint, never larger.
+    if (this.uiState.compactMode) {
+      // Docked/compact mode is left docked — its height is always
+      // content-driven from #horizon-wrap's flex-basis (see the
+      // .compact.vantage-active CSS rule), so there's no window sizing to
+      // do here at all; the fixed size below only applies to the floating
+      // window.
+    } else if (active) {
+      // Vantage Point locks the floating window to one fixed size
+      // (820x604) for every viewer, every time — not whatever size the
+      // window happened to be at, and not something recomputed from the
+      // window's current content. Position bookkeeping goes through
+      // this.setPosition() (not raw element.style writes) so it stays
+      // consistent with ApplicationV2's own position state. The window's
+      // size just before Vantage Point was toggled on is remembered so
+      // turning it back off restores exactly what was there.
+      this._vantagePrevSize = { width: this.position.width, height: this.position.height };
+      this.setPosition(VANTAGE_LOCKED_SIZE);
+    } else if (this._vantagePrevSize) {
+      this.setPosition({ width: this._vantagePrevSize.width, height: this._vantagePrevSize.height });
+      this._vantagePrevSize = null;
+    }
     // The radar's own SVG viewBox is a fixed 320x320 regardless of window
     // size (it scales via preserveAspectRatio, not by recomputing points),
     // so there's no geometry to redo here beyond redrawing it — but do

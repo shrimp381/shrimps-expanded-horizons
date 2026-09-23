@@ -307,10 +307,6 @@
     align-items:center; justify-content:center;
     background:radial-gradient(circle at 50% 50%, var(--ink-800) 0%, var(--ink-950) 78%);
   }
-  .radar-ring-label{
-    font-family:'JetBrains Mono',monospace; font-size:7.5px; letter-spacing:.03em;
-    fill:var(--parchment-dim); text-anchor:start; dominant-baseline:middle; opacity:.8;
-  }
   /* Custom HTML hover tooltip for radar blips — replaces the unreliable
      native SVG <title> (browser-timed, no styling, easy to miss). Built
      once in the radar-view DOM and repositioned/filled on hover — see
