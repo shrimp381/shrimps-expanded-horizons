@@ -1,7 +1,7 @@
 {{!-- Single row inside #layer-rows. Rendered by the "layers" PART via
       {{#each layers}}{{> eh-layer-row}}{{/each}} in window.hbs.
       Context: one entry from ExpandedHorizonsApp#_layerRowContext(). --}}
-<div class="layer-row{{#unless enabled}} disabled{{/unless}}" data-layer-id="{{id}}">
+<div class="layer-row{{#unless enabled}} eh-layer-off{{/unless}}" data-layer-id="{{id}}">
   <div class="layer-row-top">
     <input type="checkbox" class="layer-enable" data-layer-id="{{id}}" {{#if enabled}}checked{{/if}} title="{{toggleTitle}}">
     <span class="idx">{{id}}</span>
