@@ -467,7 +467,6 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
       savePreset: ExpandedHorizonsApp.#onSavePreset,
       loadPreset: ExpandedHorizonsApp.#onLoadPreset,
       deletePreset: ExpandedHorizonsApp.#onDeletePreset,
-      openJournalEntry: ExpandedHorizonsApp.#onOpenJournalEntry,
       randomizeGenSeed: ExpandedHorizonsApp.#onRandomizeGenSeed,
       generateHorizon: ExpandedHorizonsApp.#onGenerateHorizon
     }
@@ -504,6 +503,12 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
       compassOpacity: 0.8,
       showDragHint: true,
       fullColourIcons: false,
+      // Whether POIs can link to a real Journal Entry at all (settings ->
+      // toggle). On by default (matches every earlier release, where
+      // linking was always available); a GM running without journal
+      // integration can turn it off to drop the Journal column/badges
+      // entirely rather than ignoring an always-visible feature.
+      journalLinkingEnabled: true,
       palette: 'obsidian',
       horizonLength: 'far',
       daytime: 'day',
@@ -535,11 +540,10 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
     // Vantage Point (top-down radar view) — purely a local display toggle,
     // never saved to the scene or pushed to players, so it lives here
-    // rather than in uiState. _vantagePrevSize remembers the undocked
-    // window's size from just before Vantage Point grew it, so turning it
-    // back off restores exactly what was there.
+    // rather than in uiState. It never resizes the window (see
+    // _setVantageActive) — it just swaps #horizon-view for #radar-view
+    // within whatever size the window already is.
     this._vantageActive = false;
-    this._vantagePrevSize = null;
 
     // Procedural Generator + Presets form drafts — text/selection the GM
     // is actively composing in the settings panel. Kept on the instance
@@ -607,11 +611,12 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
       quickBiomeOptionsHtml: biomeOptionsHtml('mountains-1'),
       layers: this.layerConfig.map(l => this._layerRowContext(l)),
       pois: s.pois.map(p => this._poiRowContext(p)),
-      iconSun: ICONS.sun, iconMoon: ICONS.moon, iconJournal: ICONS.journal,
+      iconSun: ICONS.sun, iconMoon: ICONS.moon,
       // settings PART
       compass: { full: s.compassMode==='full', simple: s.compassMode==='simple', off: s.compassMode==='off' },
       compassOpacityPct: Math.round(s.compassOpacity * 100),
       fullColourIcons: s.fullColourIcons,
+      journalLinkingEnabled: s.journalLinkingEnabled,
       palette: s.palette,
       horizonLength: s.horizonLength,
       horizonLengthDesc: game.i18n.localize(HORIZON_LENGTH_DESC_KEYS[s.horizonLength] || HORIZON_LENGTH_DESC_KEYS.far),
@@ -621,11 +626,6 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
       // Presets (world-scoped, shared by every GM — see registerModuleSettings)
       presets: Object.keys(game.settings.get(MODULE_ID, 'presets') || {}).sort((a, b) => a.localeCompare(b)),
       presetNameDraft: this._presetNameDraft,
-      // Journal Entries — read-only mirror of game.journal, re-rendered via
-      // the createJournalEntry/updateJournalEntry/deleteJournalEntry hooks below
-      journalEntries: (game.journal ? Array.from(game.journal.contents) : [])
-        .map(j => ({ id: j.id, name: j.name }))
-        .sort((a, b) => a.name.localeCompare(b.name)),
       // Procedural Generator draft
       genBiome: this._genDraft.biome,
       genComboA: this._genDraft.comboA,
@@ -666,6 +666,7 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
   _poiRowContext(poi){
     return {
       id: poi.id, name: poi.name, locked: poi.locked,
+      journalLinkingEnabled: this.uiState.journalLinkingEnabled,
       bearing: Math.round(poi.bearing ?? 0),
       bearingTitle: game.i18n.localize('SHRIMPSEH.POI.BearingTitle'),
       bearingAlignTitle: game.i18n.localize('SHRIMPSEH.POI.BearingAlignTitle'),
@@ -907,6 +908,11 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
         this.uiState.fullColourIcons = e.target.checked;
         this._renderPOIs();
       });
+      settingsPanel.querySelector('#opt-journal-linking')?.addEventListener('change', (e) => {
+        this.uiState.journalLinkingEnabled = e.target.checked;
+        this._scheduleSave();
+        this.render();
+      });
       settingsPanel.querySelector('#opt-palette')?.addEventListener('change', (e) => {
         this._applyPalette(e.target.value);
         // A deliberate GM push — see "Scene persistence + GM -> player
@@ -1024,9 +1030,14 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
       poi.size = t.value;
       this._renderPOIs();
     } else if (t.classList.contains('poi-state-select')) {
+      // Only _renderPOIs() — a full this.render() here was re-rendering the
+      // whole `window` PART, which re-runs _onFirstRender-style position
+      // logic and snaps the window back to its default/minimum size,
+      // discarding whatever size the GM had set. Every other per-POI field
+      // in this table (layer, size, journal, bearing) already updates via
+      // _renderPOIs() alone, with no window-level re-render.
       poi.state = t.value;
       this._renderPOIs();
-      this.render();
     } else if (t.classList.contains('poi-journal-select')) {
       poi.journalId = t.value || null;
       this._renderPOIs();
@@ -1276,12 +1287,6 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render();
   }
 
-  /* ---------------- Journal Entries panel: open in Foundry's own sheet ---------------- */
-  static #onOpenJournalEntry(event, target){
-    const journal = game.journal?.get(target.dataset.journalId);
-    journal?.sheet.render(true);
-  }
-
   /* ---------------- Procedural Generator ---------------- */
   static #onRandomizeGenSeed(){
     this._genDraft.seed = Math.random().toString(36).slice(2, 10);
@@ -1500,6 +1505,28 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
   _orderedEnabledLayerIds(){
     return this.layerConfig.filter(l => l.enabled).map(l => l.id);
   }
+  // Human-readable terrain name for a layer — used to label each radar
+  // ring (see _renderRadar()). Reuses the same biome-family/variant and
+  // builtin-forest-image labels the Layers panel's own biome <select>
+  // already shows, so a ring's label always matches what the GM picked
+  // there; falls back to a generic "Layer N" for an uploaded custom image
+  // (no biome name applies) or anything unrecognized.
+  _layerDisplayName(layer){
+    if (!layer) return '';
+    const fallback = () => game.i18n.format('SHRIMPSEH.Radar.LayerFallbackLabel', { id: layer.id });
+    if (layer.customImage && !layer.customImageBuiltin) return fallback();
+    const biome = layer.biome || '';
+    if (biome.startsWith('img:')) {
+      const key = biome.slice(4);
+      const found = BUILTIN_LAYER_IMAGES.forest.find(b => b.key === key);
+      return found ? game.i18n.localize(found.labelKey) : fallback();
+    }
+    const [family, variantStr] = biome.split('-');
+    const fam = BIOME_FAMILIES.find(f => f.key === family);
+    if (!fam) return fallback();
+    const variant = parseInt(variantStr, 10) || 1;
+    return game.i18n.format('SHRIMPSEH.Biome.NumberedLabel', { label: game.i18n.localize(fam.singularKey), n: variant });
+  }
   _fillerHeightFor(layer){
     return Math.max(0, -layer.yOffset);
   }
@@ -1610,14 +1637,21 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const wisMod = actor.system?.abilities?.wis?.mod;
     return 10 + (typeof wisMod === 'number' ? wisMod : 0);
   }
-  // GM always sees the real, saved poi.state. A player sees it promoted from Hidden to
-  // Unknown once their own passive Perception clears the POI's revealDC — existence only,
-  // never straight to Rumored/Discovered, which stay deliberate GM calls (rumors heard,
-  // places actually visited) rather than something a Perception score alone should unlock.
+  // GM always sees the real, saved poi.state. For a player: Rumored and Discovered are
+  // always visible to everyone unconditionally (a deliberate GM call already promoted
+  // them past needing a Perception check). Unknown is the state passive Perception
+  // actually gates — a player only sees the unidentified blip once their own passive
+  // Perception meets or beats the POI's revealDC; otherwise it's as good as Hidden to
+  // them. Hidden always stays Hidden to a player regardless of DC — existence itself is
+  // a deliberate GM reveal (promoting to Unknown), never something a Perception score
+  // alone unlocks.
   _effectivePoiState(poi){
     if (this.IS_GM) return poi.state;
-    if (poi.state !== 'hidden') return poi.state;
-    return this._myPassivePerception() >= (poi.revealDC ?? 15) ? 'unknown' : 'hidden';
+    if (poi.state === 'rumored' || poi.state === 'discovered') return poi.state;
+    if (poi.state === 'unknown') {
+      return this._myPassivePerception() >= (poi.revealDC ?? 15) ? 'unknown' : 'hidden';
+    }
+    return 'hidden';
   }
 
   _renderPOIs(){
@@ -1664,8 +1698,11 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       // A linked journal only ever shows once the POI is fully Discovered —
       // Unknown/Rumored give away that something's there, but the party
-      // hasn't earned the actual lore entry yet.
-      const journal = poi.journalId ? game.journal?.get(poi.journalId) : null;
+      // hasn't earned the actual lore entry yet. Also gated on the GM's
+      // journal-linking toggle (settings), so turning that off hides any
+      // existing badges immediately even though the underlying journalId
+      // is left untouched on the POI (it simply stops being used).
+      const journal = (this.uiState.journalLinkingEnabled && poi.journalId) ? game.journal?.get(poi.journalId) : null;
       if (journal && effState === 'discovered') {
         html += `<button type="button" class="poi-journal-badge" title="${game.i18n.format('SHRIMPSEH.POI.JournalBadgeTitle', { name: escapeHtml(journal.name) })}" aria-label="${game.i18n.localize('SHRIMPSEH.POI.JournalBadgeAria')}">${ICONS.journal}</button>`;
       }
@@ -1740,13 +1777,22 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     };
 
     // Rings, one per enabled layer, nearest innermost. Coloured with the
-    // layer's own palette colour so ring identity reads at a glance.
+    // layer's own palette colour so ring identity reads at a glance, and
+    // labelled with that layer's terrain name (all placed along the same
+    // fixed bearing so they stack cleanly radius-over-radius rather than
+    // colliding with the compass spokes/labels).
+    const RING_LABEL_BEARING = 100;
     ordered.forEach((layerId, i) => {
       const layer = this.layerConfig.find(l => l.id === layerId);
       const r = ringStep * (i + 1);
       const ring = el('circle', { cx, cy, r, class: 'radar-ring' });
       ring.style.stroke = layer?.color || 'var(--brass)';
       svg.appendChild(ring);
+
+      const labelPos = toXY(RING_LABEL_BEARING, r);
+      const label = el('text', { x: labelPos.x + 3, y: labelPos.y, class: 'radar-ring-label' });
+      label.textContent = this._layerDisplayName(layer);
+      svg.appendChild(label);
     });
 
     // 8-point compass spokes, fixed (never rotate) — the radar is north-up.
@@ -1775,7 +1821,13 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // Party marker, fixed at centre.
     svg.appendChild(el('circle', { cx, cy, r: 5, class: 'radar-party-dot' }));
 
-    // POI dots.
+    // POI dots. Hover is handled by a custom positioned HTML tooltip (see
+    // #radar-tooltip below) rather than the native SVG <title> — a native
+    // title only appears after the browser's own OS-timed hover delay and
+    // can't be styled/positioned reliably, which is why the name wasn't
+    // showing up consistently. A <title> is still added too, as a harmless
+    // no-cost fallback for any input method the custom tooltip can't reach.
+    const tooltip = this.element?.querySelector('#radar-tooltip');
     this.uiState.pois.forEach(poi => {
       const effState = this._effectivePoiState(poi);
       if (effState === 'hidden') return;
@@ -1786,13 +1838,27 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
       const { x, y } = toXY(bearing, r);
 
       const dot = el('circle', { cx: x, cy: y, r: effState === 'unknown' ? 3.5 : 5, class: `radar-poi radar-poi-${effState}` });
-      const title = el('title', {});
-      title.textContent = effState === 'discovered'
+      const tooltipText = effState === 'discovered'
         ? poi.name
         : game.i18n.localize('SHRIMPSEH.Radar.UnknownTooltip');
+      const title = el('title', {});
+      title.textContent = tooltipText;
       dot.appendChild(title);
 
-      const journal = poi.journalId ? game.journal?.get(poi.journalId) : null;
+      if (tooltip) {
+        const showTooltip = (clientX, clientY) => {
+          const hostRect = tooltip.offsetParent?.getBoundingClientRect() || this.element.getBoundingClientRect();
+          tooltip.textContent = tooltipText;
+          tooltip.style.left = `${clientX - hostRect.left}px`;
+          tooltip.style.top = `${clientY - hostRect.top}px`;
+          tooltip.style.display = 'block';
+        };
+        dot.addEventListener('mouseenter', (e) => showTooltip(e.clientX, e.clientY));
+        dot.addEventListener('mousemove', (e) => showTooltip(e.clientX, e.clientY));
+        dot.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+      }
+
+      const journal = (this.uiState.journalLinkingEnabled && poi.journalId) ? game.journal?.get(poi.journalId) : null;
       if (effState === 'discovered' && journal) {
         dot.classList.add('radar-poi-linked');
         dot.addEventListener('click', (e) => {
@@ -1903,30 +1969,12 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     // fill whatever room that frees up — Vantage Point's extra size is
     // for the horizon itself, not the panel underneath it.
     el.classList.toggle('vantage-active', active);
-    if (this.uiState.compactMode) {
-      // Docked/compact mode is left docked — its height is always
-      // content-driven from #horizon-wrap's flex-basis, and the
-      // .compact.vantage-active CSS rule already grows that basis, so
-      // there's no window sizing to do here at all.
-    } else if (active) {
-      // Grow the horizon view itself (roughly doubled, with a little
-      // extra headroom for the radar's own layout) rather than the whole
-      // previous window — #controls is now hidden, so #horizon-wrap gets
-      // 100% of whatever height the window is given. Position bookkeeping
-      // goes through this.setPosition() (not raw element.style writes)
-      // so it stays consistent with ApplicationV2's own position state —
-      // same rationale as every other window-sizing method in this class.
-      const horizonRect = el.querySelector('#horizon-wrap')?.getBoundingClientRect();
-      const titlebarRect = el.querySelector('#dh-titlebar')?.getBoundingClientRect();
-      const windowRect = el.getBoundingClientRect();
-      this._vantagePrevSize = { width: this.position.width, height: this.position.height };
-      const width = Math.round(Math.max(windowRect.width * 2, 900));
-      const height = Math.round((titlebarRect?.height || 0) + Math.max((horizonRect?.height || 168) * 2.2, 420));
-      this.setPosition({ width, height });
-    } else if (this._vantagePrevSize) {
-      this.setPosition({ width: this._vantagePrevSize.width, height: this._vantagePrevSize.height });
-      this._vantagePrevSize = null;
-    }
+    // Deliberately no setPosition()/window-resizing here at all — Vantage
+    // Point opens and stays locked to whatever size the window (default or
+    // GM-resized) already is. #controls (Layers/POI panel) hides via the
+    // .vantage-active CSS class above, and #horizon-wrap's existing
+    // `flex:1 1 auto` simply lets the radar fill the room that frees up
+    // within the window's current bounds — same footprint, never larger.
     // The radar's own SVG viewBox is a fixed 320x320 regardless of window
     // size (it scales via preserveAspectRatio, not by recomputing points),
     // so there's no geometry to redo here beyond redrawing it — but do
@@ -2255,7 +2303,11 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
       nextPoiId: this.uiState.nextPoiId,
       horizonLength: this.uiState.horizonLength,
       daytime: this.uiState.daytime,
-      viewLocked: this.uiState.viewLocked
+      viewLocked: this.uiState.viewLocked,
+      // Affects what players see (Journal badges), so it's a synced scene
+      // setting like horizonLength/daytime/viewLocked above, not a purely
+      // local GM preference (unlike fullColourIcons/freeDock).
+      journalLinkingEnabled: this.uiState.journalLinkingEnabled
     };
   }
   _scheduleSave(){
@@ -2317,6 +2369,7 @@ class ExpandedHorizonsApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (payload.horizonLength) this.uiState.horizonLength = payload.horizonLength;
     if (payload.daytime) this.uiState.daytime = payload.daytime;
     if (typeof payload.viewLocked === 'boolean') this.uiState.viewLocked = payload.viewLocked;
+    if (typeof payload.journalLinkingEnabled === 'boolean') this.uiState.journalLinkingEnabled = payload.journalLinkingEnabled;
     // Any layer whose customImageRaw is now set but has no matching derived
     // customImage (a fresh upload from another client, or a payload that
     // never carried the derived bitmap in the first place) needs that
@@ -2584,11 +2637,12 @@ Hooks.on('updateSetting', (setting) => {
   if (app?.rendered) app.render();
 });
 
-// Read-only mirror of game.journal in the Journal Entries settings panel —
-// re-rendered whenever the real Journal directory changes, so a journal
-// created/renamed/deleted while the window is open is picked up without a
-// reload. A deleted entry also has to drop out of any POI's Journal select
-// and its saved journalId, or a stale link would silently point at nothing.
+// Keeps every POI row's Journal <select> (see _poiJournalOptionsHtml) in
+// sync with the real Journal directory — re-rendered whenever it changes,
+// so a journal created/renamed/deleted while the window is open is picked
+// up without a reload. A deleted entry also has to drop out of any POI's
+// Journal select and its saved journalId, or a stale link would silently
+// point at nothing.
 function refreshExpandedHorizonsJournalUI(){
   const app = foundry.applications.instances.get('eh-window');
   if (app?.rendered) app.render();

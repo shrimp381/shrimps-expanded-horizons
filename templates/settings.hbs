@@ -95,19 +95,9 @@
   <div class="gm-only">
     <hr>
     <h3>{{localize "SHRIMPSEH.Settings.Journal.Heading"}}</h3>
-    <div class="eh-list" id="journal-list">
-      {{#if journalEntries.length}}
-        {{#each journalEntries}}
-        <div class="eh-chip">
-          <span class="eh-chip-name">{{{../iconJournal}}} {{this.name}}</span>
-          <div class="eh-chip-actions">
-            <button type="button" data-action="openJournalEntry" data-journal-id="{{this.id}}">{{localize "SHRIMPSEH.Settings.Journal.OpenBtn"}}</button>
-          </div>
-        </div>
-        {{/each}}
-      {{else}}
-        <div class="eh-empty">{{localize "SHRIMPSEH.Settings.Journal.Empty"}}</div>
-      {{/if}}
+    <div class="setting-row" title="{{localize "SHRIMPSEH.Settings.Journal.Note"}}">
+      <label for="opt-journal-linking">{{localize "SHRIMPSEH.Settings.Journal.ToggleLabel"}}</label>
+      <input type="checkbox" id="opt-journal-linking" {{#if journalLinkingEnabled}}checked{{/if}}>
     </div>
     <div class="setting-note">{{localize "SHRIMPSEH.Settings.Journal.Note"}}</div>
   </div>

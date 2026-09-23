@@ -77,6 +77,7 @@
         into #radar-svg, same pattern as #layers-container's terrain/POI markup. --}}
   <div id="radar-view">
     <svg id="radar-svg" viewBox="0 0 320 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="{{localize "SHRIMPSEH.Radar.Aria"}}"></svg>
+    <div id="radar-tooltip"></div>
   </div>
 
   <div id="compass-hud" class="hud" style="--compass-opacity: {{compassOpacity}};" {{#if compassOff}}hidden{{/if}}>
@@ -120,7 +121,7 @@
             <th style="width:5%;">{{localize "SHRIMPSEH.POI.TableHeader.Size"}}</th>
             <th style="width:11%;">{{localize "SHRIMPSEH.POI.TableHeader.State"}}</th>
             <th style="width:19%;">{{localize "SHRIMPSEH.POI.TableHeader.Radar"}}</th>
-            <th style="width:14%;">{{localize "SHRIMPSEH.POI.TableHeader.Journal"}}</th>
+            {{#if journalLinkingEnabled}}<th style="width:14%;">{{localize "SHRIMPSEH.POI.TableHeader.Journal"}}</th>{{/if}}
             <th style="width:11%; text-align:right;">{{localize "SHRIMPSEH.POI.TableHeader.Actions"}}</th>
           </tr>
         </thead>

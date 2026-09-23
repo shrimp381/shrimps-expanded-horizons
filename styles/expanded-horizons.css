@@ -305,7 +305,21 @@
   #radar-view{
     position:absolute; inset:0; display:none;
     align-items:center; justify-content:center;
-    background:radial-gradient(circle at 50% 50%, #16233a 0%, #0a1220 78%);
+    background:radial-gradient(circle at 50% 50%, var(--ink-800) 0%, var(--ink-950) 78%);
+  }
+  .radar-ring-label{
+    font-family:'JetBrains Mono',monospace; font-size:7.5px; letter-spacing:.03em;
+    fill:var(--parchment-dim); text-anchor:start; dominant-baseline:middle; opacity:.8;
+  }
+  /* Custom HTML hover tooltip for radar blips — replaces the unreliable
+     native SVG <title> (browser-timed, no styling, easy to miss). Built
+     once in the radar-view DOM and repositioned/filled on hover — see
+     ExpandedHorizonsApp#_renderRadar(). */
+  #radar-tooltip{
+    position:absolute; z-index:70; pointer-events:none; display:none;
+    background:var(--ink-900); border:1px solid var(--brass); border-radius:4px;
+    padding:3px 7px; font-size:11px; color:var(--parchment); white-space:nowrap;
+    transform:translate(-50%, -100%); margin-top:-8px;
   }
   #horizon-wrap.vantage-active #horizon-view{ display:none; }
   #horizon-wrap.vantage-active #radar-view{ display:flex; }
@@ -608,6 +622,10 @@
 
   .poi-radar-field{ display:flex; align-items:center; gap:3px; }
   .poi-bearing-input{ width:38px; min-width:38px; padding:3px 2px; text-align:center; }
+  .poi-dc-label{
+    font-size:9px; letter-spacing:.04em; color:var(--parchment-dim);
+    flex:0 0 auto; cursor:default;
+  }
   .poi-dc-input{ width:32px; min-width:32px; padding:3px 2px; text-align:center; }
   .poi-radar-field .icon-btn.small{ width:20px; height:20px; padding:0; flex:0 0 auto; }
   .poi-radar-field .icon-btn.small svg{ width:11px; height:11px; }

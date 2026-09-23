@@ -28,12 +28,15 @@
     <div class="poi-radar-field">
       <input type="number" class="poi-bearing-input" data-poi-id="{{id}}" value="{{bearing}}" min="0" max="359" title="{{bearingTitle}}">
       <button type="button" class="icon-btn small" data-action="alignPoiBearing" data-poi-id="{{id}}" title="{{bearingAlignTitle}}">{{{iconCompass}}}</button>
+      <span class="poi-dc-label" title="{{revealDCTitle}}">{{localize "SHRIMPSEH.POI.DCLabel"}}</span>
       <input type="number" class="poi-dc-input" data-poi-id="{{id}}" value="{{revealDC}}" min="1" max="40" title="{{revealDCTitle}}">
     </div>
   </td>
+  {{#if journalLinkingEnabled}}
   <td>
     <select class="poi-journal-select" data-poi-id="{{id}}">{{{journalOptionsHtml}}}</select>
   </td>
+  {{/if}}
   <td class="actions-cell">
     <button type="button" class="icon-btn" data-action="focusPoi" data-poi-id="{{id}}" title="{{focusTitle}}">{{{iconEye}}}</button>
     <button type="button" class="icon-btn{{#if locked}} lock-on{{/if}}" data-action="togglePoiLock" data-poi-id="{{id}}" title="{{lockTitle}}">{{{lockIcon}}}</button>

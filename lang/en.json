@@ -77,9 +77,8 @@
       },
       "Journal": {
         "Heading": "Journal Entries",
-        "OpenBtn": "Open",
-        "Empty": "No journal entries in this world yet.",
-        "Note": "This mirrors Foundry's own Journal sidebar. Link an entry to a POI from its row in the table below; once that POI is Discovered, players see a small journal badge on it that opens the real entry."
+        "ToggleLabel": "Link POIs to Journal Entries",
+        "Note": "Link a POI to an existing Journal entry. Once the POI is Discovered, players see a small journal badge on it that opens the real entry."
       },
       "Generator": {
         "Heading": "Procedural Generator",
@@ -108,7 +107,8 @@
 
     "Radar": {
       "Aria": "Top-down radar — rings are terrain layers, dots are points of interest",
-      "UnknownTooltip": "Something's here…"
+      "UnknownTooltip": "Something's here…",
+      "LayerFallbackLabel": "Layer {id}"
     },
 
     "Layers": {
@@ -188,7 +188,8 @@
       "JournalBadgeAria": "Read journal entry",
       "BearingTitle": "Compass bearing (0-359°) for the radar view — independent of this POI's position on the flat horizon",
       "BearingAlignTitle": "Set bearing to the horizon's current facing",
-      "RevealDCTitle": "Passive Perception DC — a Hidden POI becomes visible (as an unidentified blip) to a player whose own passive Perception meets or beats this"
+      "DCLabel": "DC",
+      "RevealDCTitle": "Passive Perception DC — while this POI is Unknown, it's only visible (as an unidentified blip) to a player whose own passive Perception meets or beats this. Rumored and Discovered POIs are always visible to everyone; Hidden POIs stay GM-only regardless of this DC."
     },
 
     "Biome": {
